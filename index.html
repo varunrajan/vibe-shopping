@@ -7,6 +7,7 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     * {
       margin: 0;
@@ -44,24 +45,81 @@
     }
 
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      gap: 16px;
     }
 
     .title {
       font-size: 2.5rem;
       font-weight: 700;
       color: #667eea;
-      margin-bottom: 30px;
-      text-align: center;
+      flex-shrink: 0;
     }
 
+    /* ── User menu ── */
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .user-email {
+      font-size: 0.85rem;
+      color: #666;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sign-out-btn {
+      font-size: 0.85rem;
+      color: #667eea;
+      background: none;
+      border: 1.5px solid #667eea;
+      border-radius: 20px;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .sign-out-btn:hover {
+      background: #667eea;
+      color: white;
+    }
+
+    .signup-prompt-btn {
+      font-size: 0.85rem;
+      color: white;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 20px;
+      padding: 8px 18px;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: inherit;
+      transition: transform 0.2s, box-shadow 0.2s;
+      white-space: nowrap;
+    }
+
+    .signup-prompt-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    /* ── Form ── */
     .input-section {
       margin-bottom: 40px;
     }
@@ -197,21 +255,15 @@
       border: 2px solid #e0e0e0;
       border-radius: 10px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-      z-index: 1000;
+      z-index: 100;
       max-height: 300px;
       overflow-y: auto;
       animation: slideDown 0.2s ease;
     }
 
     @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .store-option {
@@ -263,6 +315,7 @@
       transform: translateY(0);
     }
 
+    /* ── Shopping list ── */
     .shopping-list {
       margin-top: 40px;
     }
@@ -302,14 +355,8 @@
     }
 
     @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateX(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
     }
 
     .shopping-item:hover {
@@ -406,6 +453,305 @@
       transform: scale(1.1);
     }
 
+    /* ── Loading overlay ── */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      backdrop-filter: blur(4px);
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ── Auth modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .auth-modal {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: #f0f0f0;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      transition: background 0.2s;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    .modal-title {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 8px;
+      padding-right: 32px;
+    }
+
+    .modal-subtitle {
+      color: #666;
+      margin-bottom: 28px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .auth-button-google {
+      width: 100%;
+      padding: 12px 20px;
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 0.97rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s;
+      font-family: inherit;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .auth-button-google:hover {
+      border-color: #667eea;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      color: #999;
+      font-size: 0.9rem;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e0e0e0;
+    }
+
+    .auth-email-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-family: inherit;
+      margin-bottom: 12px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+      display: block;
+    }
+
+    .auth-email-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .auth-button-primary {
+      width: 100%;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    }
+
+    .auth-button-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .auth-button-primary:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .auth-toggle {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .auth-toggle button {
+      background: none;
+      border: none;
+      color: #667eea;
+      cursor: pointer;
+      font-size: inherit;
+      font-weight: 600;
+      padding: 0;
+      text-decoration: underline;
+      font-family: inherit;
+    }
+
+    .auth-maybe-later {
+      display: block;
+      width: 100%;
+      margin-top: 12px;
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: center;
+      padding: 6px;
+      transition: color 0.2s;
+    }
+
+    .auth-maybe-later:hover {
+      color: #666;
+    }
+
+    /* ── Magic link sent ── */
+    .magic-link-sent {
+      text-align: center;
+      padding: 16px 0 8px;
+    }
+
+    .magic-link-icon {
+      font-size: 3.2rem;
+      margin-bottom: 16px;
+    }
+
+    .magic-link-sent h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 12px;
+    }
+
+    .magic-link-sent p {
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 28px;
+      font-size: 0.97rem;
+    }
+
+    .auth-button-secondary {
+      padding: 10px 22px;
+      background: none;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-family: inherit;
+      color: #555;
+      transition: all 0.2s;
+    }
+
+    .auth-button-secondary:hover {
+      border-color: #667eea;
+      color: #667eea;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      z-index: 2000;
+      animation: slideUpToast 0.3s ease;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    @keyframes slideUpToast {
+      from { opacity: 0; transform: translate(-50%, 20px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    .toast.error {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+
+    .toast.success {
+      background: #f0fdf4;
+      color: #16a34a;
+      border: 1px solid #bbf7d0;
+    }
+
+    .toast.info {
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #bfdbfe;
+    }
+
+    /* ── Responsive ── */
     @media (max-width: 768px) {
       .container {
         padding: 24px;
@@ -418,6 +764,18 @@
       .form-row {
         grid-template-columns: 1fr;
       }
+
+      .auth-modal {
+        padding: 32px 24px;
+      }
+
+      .modal-title {
+        font-size: 1.4rem;
+      }
+
+      .user-email {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -427,40 +785,349 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
+    const SUPABASE_URL = 'https://jcvimtxvmpmxpjrsfjcm.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjdmltdHh2bXBteHBqcnNmamNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NzI2MTUsImV4cCI6MjA5MTM0ODYxNX0.Gm_rET4qjilIL-oMvPvVQdhr_0AzbBwIrZ_aCHNr0i0';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     const STORES = ['Hmart', '99 Ranch', "Trader Joe's", 'Costco', "Farmer's Market"];
 
+    /* ─────────────────────────────────────────
+       Toast
+    ───────────────────────────────────────── */
+    function Toast({ toast, onDismiss }) {
+      useEffect(() => {
+        const t = setTimeout(onDismiss, 4000);
+        return () => clearTimeout(t);
+      }, []);
+
+      return (
+        <div className={`toast ${toast.type}`} onClick={onDismiss}>
+          {toast.message}
+        </div>
+      );
+    }
+
+    /* ─────────────────────────────────────────
+       Auth Modal
+    ───────────────────────────────────────── */
+    function AuthModal({ authMode, setAuthMode, user, onClose, setToast }) {
+      const [email, setEmail] = useState('');
+      const [magicLinkSent, setMagicLinkSent] = useState(false);
+      const [authLoading, setAuthLoading] = useState(false);
+
+      const redirectTo = window.location.origin + window.location.pathname;
+
+      const handleEmailSubmit = async (e) => {
+        e.preventDefault();
+        setAuthLoading(true);
+
+        if (user) {
+          localStorage.setItem('vibeshopping_anon_id', user.id);
+        }
+
+        const { error } = await db.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: authMode === 'signup',
+            emailRedirectTo: redirectTo,
+          },
+        });
+
+        setAuthLoading(false);
+
+        if (error) {
+          localStorage.removeItem('vibeshopping_anon_id');
+          setToast({ message: error.message, type: 'error' });
+        } else {
+          setMagicLinkSent(true);
+        }
+      };
+
+      const handleGoogleSignIn = async () => {
+        if (user) {
+          localStorage.setItem('vibeshopping_anon_id', user.id);
+        }
+
+        const { error } = await db.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo },
+        });
+
+        if (error) {
+          localStorage.removeItem('vibeshopping_anon_id');
+          setToast({ message: error.message, type: 'error' });
+        }
+        // Redirect to Google — no further state updates needed here
+      };
+
+      if (magicLinkSent) {
+        return (
+          <div className="modal-overlay" onClick={onClose}>
+            <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
+              <button className="modal-close" onClick={onClose} aria-label="Close">×</button>
+              <div className="magic-link-sent">
+                <div className="magic-link-icon">✉️</div>
+                <h2>Check your email</h2>
+                <p>
+                  We sent a magic link to <strong>{email}</strong>.
+                  Click it to {authMode === 'signup' ? 'create your account' : 'sign in'}.
+                </p>
+                <button className="auth-button-secondary" onClick={() => setMagicLinkSent(false)}>
+                  Use a different email
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="modal-overlay" onClick={onClose}>
+          <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={onClose} aria-label="Close">×</button>
+
+            <h2 className="modal-title">
+              {authMode === 'signup' ? 'Save your shopping list' : 'Welcome back'}
+            </h2>
+            <p className="modal-subtitle">
+              {authMode === 'signup'
+                ? 'Sign up to access your list from any device'
+                : 'Log in to continue with your saved items'}
+            </p>
+
+            <button className="auth-button-google" type="button" onClick={handleGoogleSignIn}>
+              <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17.64 9.2a10.34 10.34 0 0 0-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92a8.78 8.78 0 0 0 2.68-6.62z" fill="#4285F4"/>
+                <path d="M9 18a8.6 8.6 0 0 0 5.96-2.18l-2.92-2.26a5.4 5.4 0 0 1-8.05-2.85H.96v2.34A9 9 0 0 0 9 18z" fill="#34A853"/>
+                <path d="M3.99 10.71a5.41 5.41 0 0 1 0-3.42V4.95H.96a9 9 0 0 0 0 8.1l3.03-2.34z" fill="#FBBC05"/>
+                <path d="M9 3.58a4.86 4.86 0 0 1 3.44 1.35l2.58-2.58A8.65 8.65 0 0 0 9 0 9 9 0 0 0 .96 4.95L3.99 7.3A5.36 5.36 0 0 1 9 3.58z" fill="#EA4335"/>
+              </svg>
+              Continue with Google
+            </button>
+
+            <div className="auth-divider"><span>or</span></div>
+
+            <form onSubmit={handleEmailSubmit}>
+              <input
+                type="email"
+                className="auth-email-input"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoFocus
+              />
+              <button type="submit" className="auth-button-primary" disabled={authLoading}>
+                {authLoading ? 'Sending…' : 'Send magic link'}
+              </button>
+            </form>
+
+            <p className="auth-toggle">
+              {authMode === 'signup' ? (
+                <>Already have an account?{' '}
+                  <button type="button" onClick={() => setAuthMode('login')}>Log in</button>
+                </>
+              ) : (
+                <>New here?{' '}
+                  <button type="button" onClick={() => setAuthMode('signup')}>Sign up</button>
+                </>
+              )}
+            </p>
+
+            <button type="button" className="auth-maybe-later" onClick={onClose}>
+              Maybe later
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    /* ─────────────────────────────────────────
+       User Menu
+    ───────────────────────────────────────── */
+    function UserMenu({ user, onShowAuthModal, onSignOut }) {
+      if (!user) return null;
+
+      if (user.is_anonymous) {
+        return (
+          <button className="signup-prompt-btn" onClick={() => onShowAuthModal('signup')}>
+            Sign up
+          </button>
+        );
+      }
+
+      return (
+        <div className="user-menu">
+          <span className="user-email">{user.email}</span>
+          <button className="sign-out-btn" onClick={onSignOut}>
+            Sign out
+          </button>
+        </div>
+      );
+    }
+
+    /* ─────────────────────────────────────────
+       App
+    ───────────────────────────────────────── */
     function App() {
+      const [user, setUser] = useState(null);
+      const [items, setItems] = useState([]);
       const [thing, setThing] = useState('');
       const [amount, setAmount] = useState('');
       const [selectedStores, setSelectedStores] = useState([]);
       const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-      const [items, setItems] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [showAuthModal, setShowAuthModal] = useState(false);
+      const [authMode, setAuthMode] = useState('signup');
+      const [authDismissed, setAuthDismissed] = useState(false);
+      const [isReturnVisit, setIsReturnVisit] = useState(false);
+      const [toast, setToast] = useState(null);
       const dropdownRef = useRef(null);
 
+      /* ── Load items from DB ── */
+      const loadItems = async () => {
+        const { data, error } = await db
+          .from('shopping_items')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error loading items:', error);
+          return;
+        }
+
+        const sorted = [
+          ...data.filter((i) => !i.purchased),
+          ...data.filter((i) => i.purchased),
+        ];
+        setItems(sorted);
+      };
+
+      /* ── Auth initialization ── */
+      useEffect(() => {
+        let mounted = true;
+
+        const { data: { subscription } } = db.auth.onAuthStateChange(async (event, session) => {
+          if (!mounted) return;
+
+          if (event === 'INITIAL_SESSION') {
+            if (session) {
+              // Existing session restored from localStorage
+              setUser(session.user);
+
+              if (session.user.is_anonymous) {
+                setIsReturnVisit(true);
+              }
+
+              // Handle post-OAuth / post-magic-link merge
+              const storedAnonId = localStorage.getItem('vibeshopping_anon_id');
+              if (storedAnonId && storedAnonId !== session.user.id) {
+                localStorage.removeItem('vibeshopping_anon_id');
+                try {
+                  await db.rpc('merge_anonymous_items', { old_user_id: storedAnonId });
+                } catch (err) {
+                  console.error('Item merge failed:', err);
+                }
+              }
+
+              await loadItems();
+            } else {
+              // No session — sign in anonymously so the app works right away
+              const { data: anonData, error: anonError } = await db.auth.signInAnonymously();
+              if (mounted) {
+                if (anonData?.session) {
+                  setUser(anonData.session.user);
+                } else {
+                  // Anonymous auth not yet enabled — prompt sign-in so user can still access the app
+                  setShowAuthModal(true);
+                }
+              }
+            }
+            if (mounted) setLoading(false);
+
+          } else if (event === 'SIGNED_IN' && session) {
+            // Fires after magic-link click or OAuth redirect (separate from INITIAL_SESSION)
+            const storedAnonId = localStorage.getItem('vibeshopping_anon_id');
+            if (storedAnonId && storedAnonId !== session.user.id) {
+              localStorage.removeItem('vibeshopping_anon_id');
+              try {
+                await db.rpc('merge_anonymous_items', { old_user_id: storedAnonId });
+              } catch (err) {
+                console.error('Item merge failed:', err);
+              }
+            }
+
+            setUser(session.user);
+            await loadItems();
+            setShowAuthModal(false);
+            if (mounted) setLoading(false);
+
+          } else if (event === 'USER_UPDATED' && session) {
+            // Fires when anon user confirms email (identity linked)
+            setUser(session.user);
+            await loadItems();
+            setShowAuthModal(false);
+
+          } else if (event === 'SIGNED_OUT') {
+            if (mounted) {
+              setUser(null);
+              setItems([]);
+            }
+          }
+        });
+
+        return () => {
+          mounted = false;
+          subscription.unsubscribe();
+        };
+      }, []);
+
+      /* ── Auth prompt trigger ── */
+      useEffect(() => {
+        if (!loading && user && user.is_anonymous && !authDismissed) {
+          if (items.length >= 3 || (isReturnVisit && items.length > 0)) {
+            setShowAuthModal(true);
+          }
+        }
+      }, [loading, user, items.length, isReturnVisit, authDismissed]);
+
+      /* ── Dropdown click-outside ── */
       useEffect(() => {
         const handleClickOutside = (event) => {
-          if (
-            dropdownRef.current &&
-            !dropdownRef.current.contains(event.target)
-          ) {
+          if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
             setIsDropdownOpen(false);
           }
         };
-
         if (isDropdownOpen) {
           document.addEventListener('mousedown', handleClickOutside);
         }
-
         return () => {
           document.removeEventListener('mousedown', handleClickOutside);
         };
       }, [isDropdownOpen]);
 
+      /* ── Handlers ── */
+      const handleDismissModal = () => {
+        setShowAuthModal(false);
+        setAuthDismissed(true);
+      };
+
+      const handleSignOut = async () => {
+        setLoading(true);
+        await db.auth.signOut();
+        const { data } = await db.auth.signInAnonymously();
+        if (data?.session) {
+          setUser(data.session.user);
+          setItems([]);
+          setAuthDismissed(false);
+          setIsReturnVisit(false);
+        }
+        setLoading(false);
+      };
+
       const handleStoreToggle = (store) => {
         setSelectedStores((prev) =>
-          prev.includes(store)
-            ? prev.filter((s) => s !== store)
-            : [...prev, store]
+          prev.includes(store) ? prev.filter((s) => s !== store) : [...prev, store]
         );
       };
 
@@ -468,63 +1135,116 @@
         setSelectedStores((prev) => prev.filter((s) => s !== store));
       };
 
-      const handleSubmit = (e) => {
+      const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!thing.trim()) return;
+        if (!thing.trim() || !user) return;
 
-        const newItem = {
-          id: Date.now().toString(),
-          thing: thing.trim(),
-          amount: amount.trim() || undefined,
-          stores: [...selectedStores],
-          purchased: false,
-        };
+        const thingVal = thing.trim();
+        const amountVal = amount.trim() || null;
+        const storesVal = [...selectedStores];
 
-        setItems((prev) => [newItem, ...prev]);
         setThing('');
         setAmount('');
         setSelectedStores([]);
         setIsDropdownOpen(false);
-      };
 
-      const handleItemDelete = (id) => {
-        setItems((prev) => prev.filter((item) => item.id !== id));
-      };
+        const tempId = 'temp_' + Date.now();
+        const tempItem = {
+          id: tempId,
+          thing: thingVal,
+          amount: amountVal,
+          stores: storesVal,
+          purchased: false,
+          created_at: new Date().toISOString(),
+          user_id: user.id,
+        };
 
-      const handlePurchaseToggle = (id) => {
+        // Optimistic: add at top of unchecked items
         setItems((prev) => {
-          const itemIndex = prev.findIndex((item) => item.id === id);
-          if (itemIndex === -1) return prev;
-          
-          const item = prev[itemIndex];
-          const newPurchased = !item.purchased;
+          const unchecked = prev.filter((i) => !i.purchased);
+          const checked = prev.filter((i) => i.purchased);
+          return [tempItem, ...unchecked, ...checked];
+        });
+
+        const { data, error } = await db
+          .from('shopping_items')
+          .insert({ thing: thingVal, amount: amountVal, stores: storesVal, purchased: false })
+          .select()
+          .single();
+
+        if (error) {
+          setItems((prev) => prev.filter((i) => i.id !== tempId));
+          setToast({ message: 'Failed to add item. Please try again.', type: 'error' });
+          return;
+        }
+
+        setItems((prev) => prev.map((i) => (i.id === tempId ? data : i)));
+      };
+
+      const handleItemDelete = async (id) => {
+        const prevItems = [...items];
+        setItems((prev) => prev.filter((i) => i.id !== id));
+
+        const { error } = await db.from('shopping_items').delete().eq('id', id);
+
+        if (error) {
+          setItems(prevItems);
+          setToast({ message: 'Failed to delete item.', type: 'error' });
+        }
+      };
+
+      const handlePurchaseToggle = async (id) => {
+        const prevItems = [...items];
+        const item = items.find((i) => i.id === id);
+        if (!item) return;
+        const newPurchased = !item.purchased;
+
+        // Optimistic reorder
+        setItems((prev) => {
           const updatedItem = { ...item, purchased: newPurchased };
-          
-          // Remove item from current position
-          const withoutItem = prev.filter((item) => item.id !== id);
-          
+          const withoutItem = prev.filter((i) => i.id !== id);
+          const unchecked = withoutItem.filter((i) => !i.purchased);
+          const checked = withoutItem.filter((i) => i.purchased);
           if (newPurchased) {
-            // Moving to checked: add to bottom (end of checked items)
-            const unchecked = withoutItem.filter((item) => !item.purchased);
-            const checked = withoutItem.filter((item) => item.purchased);
             return [...unchecked, ...checked, updatedItem];
           } else {
-            // Moving to unchecked: add to bottom of unchecked items (but above checked)
-            const unchecked = withoutItem.filter((item) => !item.purchased);
-            const checked = withoutItem.filter((item) => item.purchased);
             return [...unchecked, updatedItem, ...checked];
           }
         });
+
+        const { error } = await db
+          .from('shopping_items')
+          .update({ purchased: newPurchased })
+          .eq('id', id);
+
+        if (error) {
+          setItems(prevItems);
+          setToast({ message: 'Failed to update item.', type: 'error' });
+        }
       };
 
-      // Items are already sorted by handlePurchaseToggle, so use items directly
-      const sortedItems = items;
-
+      /* ── Render ── */
       return (
         <div className="app">
+          {loading && (
+            <div className="loading-overlay">
+              <div className="spinner" />
+            </div>
+          )}
+
           <div className="container">
-            <h1 className="title">🛒 Vibe Shopping</h1>
-            
+            <div className="header">
+              <h1 className="title">🛒 Vibe Shopping</h1>
+              <UserMenu
+                user={user}
+                onShowAuthModal={(mode) => {
+                  setAuthMode(mode);
+                  setShowAuthModal(true);
+                }}
+                onSignOut={handleSignOut}
+              />
+            </div>
+
             <form onSubmit={handleSubmit} className="input-section">
               <div className="form-row">
                 <div className="form-group thing-group">
@@ -562,7 +1282,7 @@
                   >
                     <div className="store-pills">
                       {selectedStores.length === 0 ? (
-                        <span className="store-placeholder">Select stores...</span>
+                        <span className="store-placeholder">Select stores…</span>
                       ) : (
                         selectedStores.map((store) => (
                           <span key={store} className="store-pill">
@@ -582,9 +1302,7 @@
                         ))
                       )}
                     </div>
-                    <span className={`dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>
-                      ▼
-                    </span>
+                    <span className={`dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>▼</span>
                   </div>
                   {isDropdownOpen && (
                     <div className="store-dropdown-menu">
@@ -614,8 +1332,11 @@
                 <p className="empty-message">No items yet. Add something above!</p>
               ) : (
                 <div className="items-container">
-                  {sortedItems.map((item) => (
-                    <div key={item.id} className={`shopping-item ${item.purchased ? 'purchased' : ''}`}>
+                  {items.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`shopping-item ${item.purchased ? 'purchased' : ''}`}
+                    >
                       <div className="item-checkbox-container">
                         <input
                           type="checkbox"
@@ -630,7 +1351,7 @@
                         {item.amount && (
                           <div className="item-amount">{item.amount}</div>
                         )}
-                        {item.stores.length > 0 && (
+                        {item.stores && item.stores.length > 0 && (
                           <div className="item-stores">
                             {item.stores.map((store) => (
                               <span key={store} className="item-store-tag">
@@ -653,6 +1374,20 @@
               )}
             </div>
           </div>
+
+          {showAuthModal && (
+            <AuthModal
+              authMode={authMode}
+              setAuthMode={setAuthMode}
+              user={user}
+              onClose={handleDismissModal}
+              setToast={setToast}
+            />
+          )}
+
+          {toast && (
+            <Toast toast={toast} onDismiss={() => setToast(null)} />
+          )}
         </div>
       );
     }
